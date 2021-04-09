@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 const port = 3000
 const bcrypt = require('bcrypt');
-const pass = '!]m:#$xDY@p/QDeW';
+var salt = bcrypt.genSaltSync(10)
 require("dotenv-safe").config();
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql');
@@ -18,7 +18,7 @@ function connect(){
   const connection = mysql.createConnection({
       host: "localhost",
       user: "root",
-      password: "",
+      password: "Machado_123",
       database:"db_app"  
   });
   global.connection = connection;
@@ -62,11 +62,10 @@ app.get('/usuarios/:id?', (req, res) =>{
 app.post('/usuario/novo', (req, res) => {
     const conn = connect(); 
     id=req.body.id;
-    usuario=req.body.usuario;
-    senha=req.body.senha;
-    senha= bcrypt.hash(senha,pass);
-    console.log("novo usuario: "+" nome:"+req.body.usuario+" senha:"+req.body.senha+ " id:"+req.body.id);
-    conn.query('INSERT INTO usuarios(id,usuario,senha) VALUES (?,?,?)',[id,usuario,senha],
+    usuario=req.body.email;
+    senha= bcrypt.hashSync(req.body.senha,salt);
+    console.log("novo usuario: "+" nome:"+req.body.email+" senha:"+senha+ " id:"+req.body.id);
+    conn.query('INSERT INTO usuarios(id,email,senha) VALUES (?,?,?)',[id,usuario,senha],
       function(err, result, fields) {
           if (err) throw err;
           console.log(result);
@@ -80,7 +79,7 @@ app.get('/usuarios/del/:id?', (req, res) =>{
   const conn = connect();   
   let filter = '';
     id = parseInt(req.params.id);
-    if(req.params.id) filter = ' WHERE ID=' + id;
+    if(req.params.id) filter = ' WHERE id=' + id;
     conn.query('DELETE FROM usuarios' + filter,
     function (err, result, fields) {
       if (err) throw err;
@@ -90,10 +89,23 @@ app.get('/usuarios/del/:id?', (req, res) =>{
   });
 })
 
+function pesquisa(email,senha){
+  const conn = connect();  
+  console.log(email+" "+ senha);
+  let filter = '';
+  filter = ' WHERE email=' + email+' and senha='+senha;
+  conn.query('SELECT email, senha FROM usuarios' + filter,
+  function (err, result, fields) {
+      if (err) throw err;
+      console.log(result);
+      return result;
+  });
+}
+
 //authentication
 app.post('/login', (req, res, next) => {
     //esse teste abaixo deve ser feito no seu banco de dados
-    if(req.body.user === 'luiz' && req.body.password === '123'){
+    if(pesquisa(req.body.email,bcrypt.hashSync(req.body.senha,salt))){
       //auth ok
       const id = 1; //esse id viria do banco de dados
       const token = jwt.sign({ id }, process.env.SECRET, {
