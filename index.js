@@ -1,6 +1,8 @@
 const express = require('express')
 const app = express()
 const port = 3000
+const bcrypt = require('bcrypt');
+const pass = '!]m:#$xDY@p/QDeW';
 require("dotenv-safe").config();
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql');
@@ -25,7 +27,9 @@ function connect(){
 }
 
 app.get('/', (req, res) => {
-  res.send('Olá mundo!')
+  hello = 'Olá mundo!';
+  hello = bcrypt.hash(hello,pass);
+  res.send(hello)
 })
 
 //retorna todos usuarios
@@ -60,6 +64,7 @@ app.post('/usuario/novo', (req, res) => {
     id=req.body.id;
     usuario=req.body.usuario;
     senha=req.body.senha;
+    senha= bcrypt.hash(senha,pass);
     console.log("novo usuario: "+" nome:"+req.body.usuario+" senha:"+req.body.senha+ " id:"+req.body.id);
     conn.query('INSERT INTO usuarios(id,usuario,senha) VALUES (?,?,?)',[id,usuario,senha],
       function(err, result, fields) {
@@ -117,5 +122,5 @@ function verificaJWT(req, res, next){
 }
 
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
+  console.log(`ExampleApp listening at http://localhost:${port}`)
 })
